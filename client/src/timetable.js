@@ -1,3 +1,4 @@
+export const classTitle=row=>`${row.subject}${row.classType?' ('+row.classType+')':''}`;
 export const classColors={coral:{label:'Coral',ink:'#a53929',fill:'#fce8e2'},blue:{label:'Blue',ink:'#246499',fill:'#e7f1fc'},green:{label:'Green',ink:'#247645',fill:'#e5f4e9'},purple:{label:'Purple',ink:'#69409e',fill:'#efe5fc'},gold:{label:'Gold',ink:'#8e600e',fill:'#fff0d7'},teal:{label:'Teal',ink:'#286d73',fill:'#e7f3f3'}};
 export const colorFor=row=>classColors[row.color] || classColors.coral;
 export const clockLabel=time=>{const [h,m]=time.split(':').map(Number);return `${h%12||12}${m?':'+String(m).padStart(2,'0'):''} ${h<12?'am':'pm'}`};
@@ -21,7 +22,7 @@ export function renderTimetable(items){
    svg+=`<rect x="${x}" y="${y}" width="${col-10}" height="${h}" rx="12" fill="${c.fill}" stroke="#eee9e5"/>`;
    if(item){
     svg+=`<path d="M ${x+12} ${y+h-7} H ${x+col-22}" stroke="${c.ink}" stroke-width="3"/>`;
-    const lines=[...wrap(item.subject).map(t=>({t,weight:600})),{t:`${clockLabel(item.start)}–${clockLabel(item.end)}`,weight:400},...wrap(item.room).map(t=>({t,weight:400}))];
+    const lines=[...wrap(classTitle(item)).map(t=>({t,weight:600})),{t:`${clockLabel(item.start)}–${clockLabel(item.end)}`,weight:400},...wrap(item.room).map(t=>({t,weight:400}))];
     const size=Math.min(18,(h-24)/lines.length/1.3);
     lines.forEach((l,j)=>svg+=text(x+14,y+20+j*size*1.3,l.t,size,'#292929',l.weight));
    }

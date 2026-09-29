@@ -18,8 +18,7 @@ async function adminSession() {
 
 export async function createPreview(file) {
   if (file.size > 15 * 1024 * 1024) throw new Error('PDF must be 15 MB or smaller.');
-  const [pdfjs, worker] = await Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]);
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  const { pdfjs } = await import('./pdf-runtime.js');
   const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false });
   try {
     const pdf = await task.promise, page = await pdf.getPage(1);
