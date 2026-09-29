@@ -1,0 +1,5 @@
+project_id = "student-planner"
+
+[functions.hub]
+# The function validates user JWTs against Auth and checks the admin allowlist itself.
+verify_jwt = false

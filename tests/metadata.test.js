@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {once} from 'node:events';
+import {createApp} from '../server/app.js';
+import {openDatabase} from '../server/database.js';
+import {hashPassword} from '../server/auth.js';
+test('hub metadata validates, persists, and preserves related records',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hub-metadata-')),databasePath=path.join(dir,'hub.sqlite');
+ const {app,store}=createApp({databasePath,uploadDir:path.join(dir,'uploads')});
+ const server=app.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(async()=>{server.closeAllConnections();await new Promise(r=>server.close(r));store.close();fs.rmSync(dir,{recursive:true,force:true})});
+ const base=`http://127.0.0.1:${server.address().port}/api`;let cookie='';
+ const send=(route,body,method='POST')=>fetch(base+route,{method,headers:{'Content-Type':'application/json',Cookie:cookie},body:JSON.stringify(body)});
+ store.db.prepare('INSERT INTO administrators VALUES(?,?,?)').run('a','admin',hashPassword('a-secure-test-password'));
+ const login=await send('/auth/login',{username:'admin',password:'a-secure-test-password'});cookie=login.headers.get('set-cookie').split(';')[0];
+ const c=await (await send('/courses',{code:'PHY',name:'Physics'})).json();
+ const e=await (await send('/events',{title:'Exam',date:'2026-10-01',type:'exam',courseId:c.id})).json();
+ const data={title:'Exam venue',body:'Hall A',category:'exam',important:true,source:'Exam office',courseId:c.id,eventId:e.id};
+ let response=await send('/announcements',data);assert.equal(response.status,201);const update=await response.json();assert.equal(update.important,1);
+ assert.equal((await send('/announcements',{...data,category:'unknown'})).status,400);
+ assert.equal((await send('/announcements',{...data,eventId:'missing'})).status,400);
+ assert.equal((await send('/announcements',{...data,important:'yes'})).status,400);
+ response=await send('/resources',{title:'Optics handbook',kind:'other',resourceType:'lab',description:'Lab instructions',courseId:c.id});assert.equal(response.status,201);const resource=await response.json();assert.equal(resource.resourceType,'lab');
+ const entries=[{id:'class',day:1,start:'09:00',end:'10:00',subject:'Physics',courseId:c.id,professor:'Dr Rao',classType:'Lecture'}];
+ response=await send('/schedule',{entries,revision:0},'PUT');assert.equal(response.status,200);assert.equal((await response.json()).schedule[0].professor,'Dr Rao');
+ assert.equal((await send('/courses/'+c.id,{},'DELETE')).status,409);
+ const form=new FormData();form.append('title','Assignment');form.append('dueDate','2026-10-02');form.append('submissionUrl','javascript:alert(1)');form.append('pdf',new Blob(['%PDF-1.4\n%%EOF'],{type:'application/pdf'}),'work.pdf');
+ assert.equal((await fetch(base+'/assignments',{method:'POST',headers:{Cookie:cookie},body:form})).status,400);
+ form.set('submissionUrl','https://example.com/submit');response=await fetch(base+'/assignments',{method:'POST',headers:{Cookie:cookie},body:form});assert.equal(response.status,201);assert.equal((await response.json()).submissionUrl,'https://example.com/submit');
+ assert.equal((await send('/events/'+e.id,{},'DELETE')).status,204);assert.equal(store.find('announcements',update.id).eventId,null);
+ const reopened=openDatabase(databasePath);try{assert.equal(reopened.find('resources',resource.id).resourceType,'lab');assert.equal(reopened.find('announcements',update.id).source,'Exam office');assert.equal(reopened.find('schedule','class').classType,'Lecture')}finally{reopened.close()}
+});
