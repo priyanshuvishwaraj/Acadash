@@ -21,6 +21,10 @@ Google secrets belong in Supabase Edge Function secrets, never in the public fro
 Supabase migrations and the Edge Function are deployed separately following the guide;
 GitHub Pages deploys only the frontend.
 
+For the redesign and assignment-status update, redeploy the Supabase `hub` Edge
+Function as well as the frontend. It includes the updated shared model that saves
+the administrator's "Closed for everyone" setting. No new SQL migration is needed.
+
 Local credentials, databases, uploaded PDFs, node_modules, and generated builds were
 excluded. Server source and tests are included because the workflow runs the regression
 suite. GitHub Pages does not run the local Express server.

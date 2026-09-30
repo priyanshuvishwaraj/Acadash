@@ -1,4 +1,13 @@
 import test from 'node:test';
+import {assignmentState} from '../client/src/discovery.js';
+
+test('assignment deadlines expire at IST midnight and explicit closure takes precedence',()=>{
+ const item={dueDate:'2026-09-30'};
+ assert.equal(assignmentState(item,new Date('2026-09-30T18:29:59Z')),'active');
+ assert.equal(assignmentState(item,new Date('2026-09-30T18:30:00Z')),'expired');
+ assert.equal(assignmentState({...item,closed:1},new Date('2026-09-29T00:00:00Z')),'closed');
+ assert.equal(assignmentState({...item,closed:0},new Date('2026-09-29T00:00:00Z')),'active');
+});
 import assert from 'node:assert/strict';
 import {campusClock,scheduleNow,searchHub,validDate} from '../client/src/discovery.js';
 const now=new Date('2026-09-28T03:45:00Z'); // Monday 9:15 IST

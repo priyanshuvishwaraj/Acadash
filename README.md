@@ -1,5 +1,13 @@
 # Campus Hub
 
+## Assignment status
+
+Administrators can use **Edit → Closed for everyone** on an assignment, then save it. Uncheck it to reopen the assignment. Closed assignments and assignments whose due date has ended stay visible with a muted appearance and a Closed or Ended label instead of due text. PDFs and details remain readable; the hub disables the submission link. This does not change an external submission service's permissions.
+
+Date-only deadlines end at midnight after the due date in Asia/Kolkata. The page updates this status every 30 seconds and when it regains focus. Active assignments appear before inactive ones and only active assignments appear in Home’s upcoming list. Closing applies to everyone; individual student submissions are not tracked.
+
+The local database adds the status column automatically. Cloud installations must redeploy the `hub` Edge Function with the updated shared model alongside the frontend; the existing JSON state needs no SQL migration.
+
 ## Cloud deployment (Supabase + Google Drive)
 
 The app now supports a statically hosted frontend with Supabase data/admin sign-in,

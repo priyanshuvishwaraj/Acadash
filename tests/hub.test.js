@@ -22,7 +22,7 @@ test('shared hub: migration, public reads, admin permissions, validation and res
   const send=(route,body,{method='POST',auth=true,origin}={})=>fetch(`${base}/api/${route}`,{method,headers:{'Content-Type':'application/json',...(auth && cookie?{Cookie:cookie}:{}),...(origin?{Origin:origin}:{})},body:JSON.stringify(body)});
   await t.test('imports existing data once and permits anonymous browsing',async()=>{
     const hub=await get('hub');
-    assert.deepEqual(hub.schedule,legacy.schedule.map(row=>({...row,color:"coral",courseId:null,professor:"",classType:""})));assert.deepEqual(hub.assignments,legacy.assignments.map(row=>({...row,courseId:null,submissionUrl:""})));
+    assert.deepEqual(hub.schedule,legacy.schedule.map(row=>({...row,color:"coral",courseId:null,professor:"",classType:""})));assert.deepEqual(hub.assignments,legacy.assignments.map(row=>({...row,courseId:null,submissionUrl:"",closed:0})));
     assert.equal(hub.events[0].startTime,'');assert.equal(hub.events[0].type,'test');
     assert.equal((await get('auth/session')).configured,false);
     assert.equal((await fetch(`${base}/api/schedule/render`)).status,200);

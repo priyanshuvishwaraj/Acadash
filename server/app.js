@@ -108,7 +108,9 @@ export function createApp({databasePath,legacyPath,uploadDir,secureCookies=false
         try { fs.readSync(fd,signature,0,5,0); } finally { fs.closeSync(fd); }
         if(signature.toString()!=='%PDF-') invalid('The attachment is not a valid PDF.');
       }
-      const item={id:existing?.id || crypto.randomUUID(),title:required(req.body.title,'Title'),subject:text(req.body.subject,160),courseId:courseId(req.body.courseId),dueDate:date(req.body.dueDate),submissionUrl:webLink(req.body.submissionUrl),description:text(req.body.description),pdfUrl:req.file ? `/uploads/${req.file.filename}` : existing.pdfUrl,originalFileName:req.file?.originalname || existing.originalFileName,createdAt:existing?.createdAt || new Date().toISOString()};
+      const closed=req.body.closed ?? existing?.closed ?? 0;
+      if(![true,false,0,1,'0','1'].includes(closed))invalid('Choose a valid assignment status.');
+      const item={closed:Number(closed===true || closed===1 || closed==='1'),id:existing?.id || crypto.randomUUID(),title:required(req.body.title,'Title'),subject:text(req.body.subject,160),courseId:courseId(req.body.courseId),dueDate:date(req.body.dueDate),submissionUrl:webLink(req.body.submissionUrl),description:text(req.body.description),pdfUrl:req.file ? `/uploads/${req.file.filename}` : existing.pdfUrl,originalFileName:req.file?.originalname || existing.originalFileName,createdAt:existing?.createdAt || new Date().toISOString()};
       if(existing) store.update('assignments',existing.id,item);else store.insert('assignments',item);
       res.status(existing?200:201).json(item);
     } catch(err) { if(req.file) fs.rmSync(req.file.path,{force:true}); next(err); }

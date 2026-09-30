@@ -29,7 +29,14 @@ test('hub metadata validates, persists, and preserves related records',async t=>
  assert.equal((await send('/courses/'+c.id,{},'DELETE')).status,409);
  const form=new FormData();form.append('title','Assignment');form.append('dueDate','2026-10-02');form.append('submissionUrl','javascript:alert(1)');form.append('pdf',new Blob(['%PDF-1.4\n%%EOF'],{type:'application/pdf'}),'work.pdf');
  assert.equal((await fetch(base+'/assignments',{method:'POST',headers:{Cookie:cookie},body:form})).status,400);
- form.set('submissionUrl','https://example.com/submit');response=await fetch(base+'/assignments',{method:'POST',headers:{Cookie:cookie},body:form});assert.equal(response.status,201);assert.equal((await response.json()).submissionUrl,'https://example.com/submit');
+ form.set('submissionUrl','https://example.com/submit');response=await fetch(base+'/assignments',{method:'POST',headers:{Cookie:cookie},body:form});assert.equal(response.status,201);const assignment=await response.json();assert.equal(assignment.submissionUrl,'https://example.com/submit');assert.equal(assignment.closed,0);
+ const edit={title:assignment.title,dueDate:assignment.dueDate,closed:1};
+ assert.equal((await fetch(base+'/assignments/'+assignment.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(edit)})).status,401);
+ response=await send('/assignments/'+assignment.id,edit,'PUT');assert.equal(response.status,200);assert.equal((await response.json()).closed,1);
+ response=await send('/assignments/'+assignment.id,{title:edit.title,dueDate:edit.dueDate},'PUT');assert.equal((await response.json()).closed,1);
+ assert.equal((await send('/assignments/'+assignment.id,{...edit,closed:'invalid'},'PUT')).status,400);
+ const closedDb=openDatabase(databasePath);try{assert.equal(closedDb.find('assignments',assignment.id).closed,1)}finally{closedDb.close()}
+ response=await send('/assignments/'+assignment.id,{...edit,closed:0},'PUT');assert.equal((await response.json()).closed,0);assert.equal(store.find('assignments',assignment.id).pdfUrl,assignment.pdfUrl);
  assert.equal((await send('/events/'+e.id,{},'DELETE')).status,204);assert.equal(store.find('announcements',update.id).eventId,null);
  const reopened=openDatabase(databasePath);try{assert.equal(reopened.find('resources',resource.id).resourceType,'lab');assert.equal(reopened.find('announcements',update.id).source,'Exam office');assert.equal(reopened.find('schedule','class').classType,'Lecture')}finally{reopened.close()}
 });

@@ -28,7 +28,7 @@ export function openDatabase(filename, legacyFile) {
   const additions={
     announcements:{category:"TEXT NOT NULL DEFAULT 'general'",important:'INTEGER NOT NULL DEFAULT 0',source:"TEXT NOT NULL DEFAULT ''",courseId:'TEXT REFERENCES courses(id) ON DELETE RESTRICT',eventId:'TEXT REFERENCES events(id) ON DELETE SET NULL'},
     resources:{resourceType:"TEXT NOT NULL DEFAULT ''"},
-    assignments:{submissionUrl:"TEXT NOT NULL DEFAULT ''"},
+    assignments:{submissionUrl:"TEXT NOT NULL DEFAULT ''",closed:'INTEGER NOT NULL DEFAULT 0 CHECK(closed IN (0,1))'},
     schedule:{courseId:'TEXT REFERENCES courses(id) ON DELETE RESTRICT',professor:"TEXT NOT NULL DEFAULT ''",classType:"TEXT NOT NULL DEFAULT ''"}
   };
   for(const [table,fields] of Object.entries(additions)) for(const [name,definition] of Object.entries(fields)) {
@@ -38,7 +38,7 @@ export function openDatabase(filename, legacyFile) {
     courses:['id','code','name'],
     resources:['resourceType','id','title','kind','courseId','description','url','pdfUrl','originalFileName','createdAt'],
     schedule:['courseId','professor','classType','id','day','start','end','subject','room','color'],
-    assignments:['submissionUrl','id','title','subject','dueDate','description','pdfUrl','originalFileName','createdAt','courseId'],
+    assignments:['closed','submissionUrl','id','title','subject','dueDate','description','pdfUrl','originalFileName','createdAt','courseId'],
     events:['id','title','date','type','description','startTime','endTime','location','courseId'],
     announcements:['category','important','source','courseId','eventId','id','title','body','createdAt']
   };
@@ -47,7 +47,7 @@ export function openDatabase(filename, legacyFile) {
   function insert(name, row) {
     table(name);
     const keys = columns[name];
-    db.prepare(`INSERT INTO ${name} (${keys.join(',')}) VALUES (${keys.map(()=>'?').join(',')})`).run(...keys.map(k=>row[k] ?? (['courseId','eventId'].includes(k)?null:k==='important'?0:k==='category'?'general':k==='color'?'coral':'')));
+    db.prepare(`INSERT INTO ${name} (${keys.join(',')}) VALUES (${keys.map(()=>'?').join(',')})`).run(...keys.map(k=>row[k] ?? (['courseId','eventId'].includes(k)?null:['important','closed'].includes(k)?0:k==='category'?'general':k==='color'?'coral':'')));
     return row;
   }
   function transaction(fn) {

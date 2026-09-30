@@ -62,7 +62,9 @@ export function mutateHub(input, collection, method, id, body = {}, attachment =
       Object.assign(fields, file, { description: text(body.description, collection === 'resources' ? 10000 : 5000) });
       if (collection === 'assignments') {
         if (!fields.pdfUrl) fail('Attach a PDF assignment file.');
-        Object.assign(fields, { subject: text(body.subject, 160), dueDate: date(body.dueDate), submissionUrl: link(body.submissionUrl) });
+        const closed = body.closed ?? old?.closed ?? 0;
+        if (![true,false,0,1,'0','1'].includes(closed)) fail('Choose a valid assignment status.');
+        Object.assign(fields, { closed: Number(closed === true || closed === 1 || closed === '1'), subject: text(body.subject, 160), dueDate: date(body.dueDate), submissionUrl: link(body.submissionUrl) });
       } else {
         Object.assign(fields, { url: link(body.url), kind: choice(body.kind, ['notes','book','reference','other'], 'notes'), resourceType: choice(body.resourceType || body.kind, ['notes','lecture','paper','syllabus','lab','book','reference','assignment','link','other'], 'notes') });
         if (!fields.pdfUrl && !fields.url && !fields.description) fail('Add a PDF, link or reference details.');

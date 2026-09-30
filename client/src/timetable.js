@@ -7,19 +7,19 @@ export function renderTimetable(items){
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  const slots=timeBoundaries(items),width=1900,left=180,col=238,rowH=120,top=210,height=top+(slots.length-1)*rowH+65;
  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
- const text=(x,y,v,size=18,color='#675e58',weight=500)=>`<text x="${x}" y="${y}" font-family="Arial,sans-serif" font-size="${size}" fill="${color}" font-weight="${weight}">${esc(v)}</text>`;
+ const text=(x,y,v,size=18,color='#647268',weight=500)=>`<text x="${x}" y="${y}" font-family="Arial,sans-serif" font-size="${size}" fill="${color}" font-weight="${weight}">${esc(v)}</text>`;
  const wrap=v=>String(v||'').match(/.{1,23}(?:\s|$)|.{1,23}/g)||[];
- let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#eeece9"/><rect x="16" y="16" width="${width-32}" height="${height-32}" rx="28" fill="#fcfaf8"/>`;
- svg+=text(44,65,'StudentHub',26,'#bd432f',700)+text(44,112,'Weekly timetable',34,'#292929',600)+text(44,185,'Time',18,'#bd432f',600);
- days.forEach((d,i)=>{svg+=`<rect x="${left+i*col}" y="150" width="${col-10}" height="48" rx="10" fill="#fbede9"/>`+text(left+i*col+14,181,d,18,'#bd432f',600)});
+ let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#fafbf8"/><rect x="16" y="16" width="${width-32}" height="${height-32}" rx="28" fill="#ffffff"/>`;
+ svg+=text(44,65,'StudentHub',26,'#204f40',700)+text(44,112,'Weekly timetable',34,'#292929',600)+text(44,185,'Time',18,'#204f40',600);
+ days.forEach((d,i)=>{svg+=`<rect x="${left+i*col}" y="150" width="${col-10}" height="48" rx="10" fill="#edf3e7"/>`+text(left+i*col+14,181,d,18,'#204f40',600)});
  slots.slice(0,-1).forEach((time,i)=>{
   const y=top+i*rowH;
   svg+=text(44,y+35,clockLabel(time),18)+text(44,y+60,'– '+clockLabel(slots[i+1]),16);
   days.forEach((_,day)=>{
    if(items.some(r=>r.day===day+1&&r.start<time&&r.end>time))return;
    const item=items.find(r=>r.day===day+1&&r.start===time),span=item?Math.max(1,slots.indexOf(item.end)-i):1;
-   const x=left+day*col,h=span*rowH-10,c=item?colorFor(item):{fill:'#fff',ink:'#eee9e5'};
-   svg+=`<rect x="${x}" y="${y}" width="${col-10}" height="${h}" rx="12" fill="${c.fill}" stroke="#eee9e5"/>`;
+   const x=left+day*col,h=span*rowH-10,c=item?colorFor(item):{fill:'#fff',ink:'#e4e8e2'};
+   svg+=`<rect x="${x}" y="${y}" width="${col-10}" height="${h}" rx="12" fill="${c.fill}" stroke="#e4e8e2"/>`;
    if(item){
     svg+=`<path d="M ${x+12} ${y+h-7} H ${x+col-22}" stroke="${c.ink}" stroke-width="3"/>`;
     const lines=[...wrap(classTitle(item)).map(t=>({t,weight:600})),{t:`${clockLabel(item.start)}–${clockLabel(item.end)}`,weight:400},...wrap(item.room).map(t=>({t,weight:400}))];

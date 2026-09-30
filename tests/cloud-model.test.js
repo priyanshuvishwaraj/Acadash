@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyHub, mutateHub } from '../supabase/functions/_shared/model.js';
 
+test('cloud assignment closure survives edits and can be reopened without replacing the PDF',()=>{
+  const body={title:'Coursework',dueDate:'2099-10-02'};
+  const first=mutateHub(emptyHub(),'assignments','POST',undefined,body,{assetId:'file',pdfUrl:'https://example.com/work.pdf'});
+  assert.equal(first.result.closed,0);
+  const closed=mutateHub(first.hub,'assignments','PUT',first.result.id,{...body,closed:'1'});
+  assert.equal(closed.result.closed,1);
+  const edited=mutateHub(closed.hub,'assignments','PUT',first.result.id,body);
+  assert.equal(edited.result.closed,1);assert.equal(edited.result.assetId,'file');assert.equal(edited.retired,null);
+  const reopened=mutateHub(edited.hub,'assignments','PUT',first.result.id,{...body,closed:'0'});
+  assert.equal(reopened.result.closed,0);
+  assert.throws(()=>mutateHub(first.hub,'assignments','PUT',first.result.id,{...body,closed:'yes'}),/valid assignment status/);
+});
+
 test('cloud permissions cannot be forged through attachment form fields', () => {
   const payload = { title: 'Notes', description: 'Reading', pdfUrl: 'https://evil.test', assetId: 'someone-elses-file' };
   const { result } = mutateHub(emptyHub(), 'resources', 'POST', undefined, payload);

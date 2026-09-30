@@ -14,6 +14,22 @@ const announcement={id:'notice',title:'Exam room changed',body:'Now in B-204',cr
 const assignment={id:'work',title:'Calculus',subject:'Maths',dueDate:'2026-10-02',description:'Chapter 1',pdfUrl:'/uploads/calculus.pdf',originalFileName:'calculus.pdf'};
 const event={id:'exam',title:'Mathematics exam',date:'2026-10-02',type:'exam',startTime:'09:30',endTime:'11:00',location:'Main hall'};
 
+test('inactive assignments retain reading access but hide due text and disable submission links',()=>{
+ for(const item of [{...assignment,closed:1,dueDate:'2099-10-02'},{...assignment,dueDate:'2000-01-01'}]){
+  const html=render(views.AssignmentsPage,{items:[item]});
+  assert.match(html,/assignment-card is-inactive/);assert.match(html,/Open PDF/);assert.doesNotMatch(html,/Due ·|Due today|Due tomorrow/);
+  const detail=render(views.ItemDetail,{page:'assignments',item:{...item,submissionUrl:'https://example.com/submit'}});
+  assert.match(detail,/disabled=""[^>]*>Submissions closed/);assert.doesNotMatch(detail,/href="https:\/\/example.com\/submit"/);assert.match(detail,/Open PDF/);
+ }
+ const active=render(views.AssignmentsPage,{items:[{...assignment,dueDate:'2099-10-02'}]});
+ assert.doesNotMatch(active,/is-inactive/);assert.match(active,/Due ·/);
+});
+
+test('closed assignments are omitted from the home upcoming list',()=>{
+ const html=render(views.Home,{hub:{schedule:[],announcements:[],events:[],assignments:[{...assignment,closed:1,dueDate:'2099-10-02'}]},go:()=>{}});
+ assert.doesNotMatch(html,/Calculus/);assert.match(html,/You’re up to date/);
+});
+
 test('student views show shared content and never expose publishing controls',()=>{
   for(const [Page,items,expected] of [[views.AnnouncementsPage,[announcement],'Exam room changed'],[views.AssignmentsPage,[assignment],'Calculus'],[views.EventsPage,[event],'Mathematics exam']]) {
     const html=render(Page,{items,onAdd:()=>{},onDelete:()=>{}});
@@ -124,7 +140,7 @@ test('assignment details carry course IDs rather than display labels',()=>{
  assert.doesNotMatch(html,/&amp;course=Maths/);
 });
 
-test('Home reuses News metadata and shows only announcements posted today in IST',async()=>{
+test('Home shows the latest campus news with metadata and resource shortcuts',async()=>{
  const {campusClock}=await import('../client/src/discovery.js');
  const {date,day}=campusClock();
  const midnight=new Date(`${date}T00:00:00+05:30`);
@@ -132,8 +148,8 @@ test('Home reuses News metadata and shows only announcements posted today in IST
  const old={...current,id:'old',title:'Yesterday campus notice',createdAt:new Date(midnight.getTime()-1).toISOString()};
  const hub={schedule:[{id:'class',day,start:'09:00',end:'10:00',subject:'Maths',color:'blue'}],assignments:[{...assignment,dueDate:date}],events:[{...event,date}],announcements:[old,current]};
  const html=render(views.Home,{hub,go:()=>{}});
- assert.match(html,/Today campus notice/);assert.doesNotMatch(html,/Yesterday campus notice/);
+ assert.match(html,/Today campus notice/);assert.match(html,/Yesterday campus notice/);
  assert.match(html,/important-update/);assert.match(html,/Exam office/);assert.match(html,/Related event/);assert.match(html,/Course resources|#resources\?course=math/);
- assert.match(html,/--class-fill:#e7f1fc/);assert.match(html,/--day-tint:#fdeaea/);assert.match(html,/--day-tint:#edf5fc/);
- const empty=render(views.Home,{hub:{...hub,announcements:[old]},go:()=>{}});assert.match(empty,/No announcements posted today/);
+ assert.match(html,/home-class-row/);assert.match(html,/Quick resources/);
+ const empty=render(views.Home,{hub:{...hub,announcements:[]},go:()=>{}});assert.match(empty,/New announcements will appear here/);
 });
